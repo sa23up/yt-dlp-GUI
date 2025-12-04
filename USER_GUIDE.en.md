@@ -230,3 +230,89 @@ pyinstaller --onefile --windowed --name="yt-dlp GUI" yt_dlp_gui.py
 An EXE will be created in `dist`. Users still need FFmpeg (and a JS runtime for EJS/4K).
 
 ---
+# 12/4 Improve code
+
+
+
+This update focuses on usability, aesthetics, and power—especially for distributing to end users without Python/FFmpeg installed. Below are the new features and improvements.
+
+## Highlights
+- One-file EXE bundling (with ffmpeg/ffprobe): end users run the app directly, no Python/FFmpeg required
+- Theming: modern Sun Valley (sv-ttk) light theme by default, graceful fallback if the theme isn’t available
+- Bilingual UI: Simplified Chinese and English, switchable at runtime
+- Multi-select batch download: auto-generate video × audio cross-product combinations
+- Enhanced combination preview: instant preview of selected IDs and combinations, plus manual refresh
+- EJS/JS Runtime support: optional unlocking of YouTube 4K/AV1/VP9/HDR formats
+- Environment checks and logging polish: clearer status and color-coded logs
+- Packaging scripts and docs: PowerShell one-click build, Spec/Hook auto-generation
+
+---
+
+## Details
+
+### 1) One-file EXE (bundling ffmpeg/ffprobe)
+- New PyInstaller Spec (yt_dlp_gui_ffmpeg.spec) and runtime hook (hook_path_ffmpeg.py).
+- ffmpeg.exe and ffprobe.exe are bundled and injected into PATH at runtime.
+- One-click build via build.ps1; use -Clean for a fresh build.
+- Output: dist/yt-dlp-gui/yt-dlp-gui.exe — no Python or FFmpeg needed on end-user machines.
+
+Use cases:
+- Distribution to users with restricted environments (no admin, no installs).
+- Truly portable GUI delivery.
+
+### 2) Theming (Light by default)
+- Sun Valley ttk theme (sv-ttk) for modern look-and-feel.
+- Automatic fallback to an internal light palette if the theme assets aren’t available.
+
+### 3) Bilingual UI
+- All labels, prompts, and logs localized in Simplified Chinese and English.
+- Language dropdown enables runtime switching without restart.
+
+### 4) Multi-select batch (video × audio)
+- In the “Parse Formats” dialog, multi-select video-only and audio-only formats.
+- Auto-generate all cross-product combinations (N videos × M audios → N×M).
+- If only one category is selected (videos or audios), download them individually.
+
+Ideal for:
+- Preparing multiple codec/container pairs in one batch.
+- Exporting multiple bitrate/container variants.
+
+### 5) Combination Preview
+- Dedicated “Combination Preview” tab shows selected video/audio IDs and sample combinations.
+- Manual refresh and auto-refresh upon tab change.
+- Live selection hint displays combination counts or single-category download hints.
+
+### 6) EJS + JS Runtime (optional)
+- Enable “Advanced Formats (EJS)” to unlock YouTube 4K/2K/AV1/VP9/HDR streams.
+- Recommended to install Deno or Node; permissive remote components (ejs:github) when yt-dlp-ejs is not installed.
+- Logs provide EJS/Runtime status and hints.
+
+### 7) Environment and Logging
+- Startup checks for FFmpeg, yt-dlp-ejs, and sv-ttk with clear guidance.
+- Color-coded logs (info/success/warning/error/batch/ejs/runtime).
+- Status bar shows speed and ETA during downloads.
+
+### 8) Packaging Scripts and Docs
+- build.ps1 auto-creates missing Spec/Hook files to avoid encoding/quote issues.
+- Step-by-step instructions and troubleshooting (execution policy, paths, theme assets, certs).
+
+---
+
+## Compatibility and Notes
+- Windows 10/11, Python 3.8+ on the build machine; end users don’t need Python.
+- EXE bundles ffmpeg/ffprobe; end users don’t need FFmpeg.
+- For EJS and high-tier formats, end users still need a JS runtime (Deno/Node/Bun/QuickJS) or use remote components.
+- To add an app icon, set icon in the Spec and rebuild.
+
+---
+
+## Quick Try (end users)
+1. Run yt-dlp-gui.exe
+2. Paste video URL → Parse formats
+3. Multi-select video/audio → Generate combinations → Start download
+4. For 4K/AV1/VP9/HDR: enable EJS in Advanced, install Deno/Node
+
+---
+
+## Feedback
+For parallel downloads, resume/retry, skip-existing, rate limits, more languages, and other enhancements—please share feedback and we’ll iterate.
