@@ -315,4 +315,4 @@ Ideal for:
 ---
 
 ## Feedback
-For parallel downloads, resume/retry, skip-existing, rate limits, more languages, and other enhancements—please share feedback and we’ll iterate.
+For parallel downloads, resume/retry, skip-existing, rate limits, more languages, and other enhancements—please share feedback and I’ll iterate.
