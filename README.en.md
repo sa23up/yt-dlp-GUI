@@ -16,7 +16,7 @@ This is a `yt-dlp`-based downloader (GUI/CLI) that leverages `ffmpeg` for muxing
 - (Optional) `yt_dlp_ejs` extension: `pip install yt-dlp-ejs`
 
 ### Quick Start
-1. Download the prebuilt `yt_dlp_gui.exe` from [Releases](./releases).
+1. Download the prebuilt `yt_dlp_gui.exe` from [Releases](https://github.com/sa23up/yt-dlp-GUI/releases).
 2. Place `ffmpeg.exe` in the same directory (and `ffprobe.exe` if needed).
 3. Run `yt_dlp_gui.exe` and follow the prompts/UI.
 
