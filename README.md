@@ -22,7 +22,7 @@
 - （可选）`yt_dlp_ejs` 扩展：`pip install yt-dlp-ejs`
 
 ### 快速开始
-1. 从 [Releases](./releases) 下载已构建的 `yt_dlp_gui.exe`。
+1. 从 [Releases](https://github.com/sa23up/yt-dlp-GUI/releases) 下载已构建的 `yt_dlp_gui.exe`。
 2. 将 `ffmpeg.exe` 放在同一目录（若需要 ffprobe 功能，可一并放置 `ffprobe.exe`）。
 3. 直接运行 `yt_dlp_gui.exe`，按界面提示操作。
 
