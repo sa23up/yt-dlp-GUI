@@ -1,6 +1,6 @@
 # 项目名称 / Project Name
 
-[中文](#中文版) | [English](#english-version)
+[English](README.en.md) | [中文](README.md)
 
 ---
 
