@@ -47,3 +47,8 @@ This is a `yt-dlp`-based downloader (GUI/CLI) that leverages `ffmpeg` for muxing
 - **ffmpeg not found**: Ensure `ffmpeg.exe` is in the same directory as the app or on the PATH; static builds are recommended.
 - **Architecture mismatch**: Make sure Python/deps/ffmpeg match the target system architecture (x64 vs x86).
 
+- 
+### Unable to parse 4K video correctly
+
+Requires downloading Node.js. Download link: https://nodejs.org/en/download/current
+
