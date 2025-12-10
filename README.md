@@ -52,4 +52,6 @@
 - **缺少模块/No module named …**：检查是否安装对应库，并在打包时添加 `--hidden-import` 或在 `.spec` 的 `hiddenimports` 中声明。
 - **找不到 ffmpeg**：确认 `ffmpeg.exe` 与程序在同一目录，或将其路径加入系统 PATH；建议使用静态版。
 - **架构不匹配**：确保 Python/依赖/ffmpeg 与目标系统同为 x64 或 x86。
+### 无法正常解析4K视频
+需要下载nodejs  下载链接：https://nodejs.org/en/download/current
 
