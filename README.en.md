@@ -1,54 +1,74 @@
 [English](README.en.md) | [中文](README.md)
 
-### Overview
-This is a `yt-dlp`-based downloader (GUI/CLI) that leverages `ffmpeg` for muxing/transcoding and optionally uses the `yt_dlp_ejs` extension to handle specific sites.
+## English Documentation
 
-### Features
-- Download online video/audio, merge tracks with ffmpeg
-- Uses static `ffmpeg`, no extra DLLs required
-- Optional `yt_dlp_ejs` (EJS) support
-- Packaged as a single `exe` for easy distribution
+### Overview
+- **Name**: yt-dlp GUI (CustomTkinter)
+- **Features**: GUI for downloading/parsing video/audio; batch combos (video×audio), cookie login, subtitle embed, EJS/JS runtime.
+- **Highlights**:
+  - Multi-select video/audio and auto-generate batch combinations.
+  - Quick presets or single format; custom pick in the parse dialog.
+  - Cookie file or browser cookies.
+  - Optional EJS (yt-dlp-ejs) and JS Runtime (deno/node/bun/quickjs).
+  - Subtitle embedding, MP3 extraction.
+  - Bilingual UI (ZH/EN), font: Microsoft YaHei.
 
 ### Requirements
-- Windows 10/11 (x64)
-- Python 3.8+ (if you build it yourself)
-- `ffmpeg.exe` (static build recommended); optional `ffprobe.exe`
-- (Optional) `yt_dlp_ejs` extension: `pip install yt-dlp-ejs`
+- Windows 10/11, Python 3.8+ recommended.
+- Dependencies:
+  - `yt-dlp`
+  - `customtkinter`
+  - (Optional) `yt-dlp-ejs` for advanced/EJS parsing.
+- FFmpeg for merging/transcoding.
+- (Optional) JS Runtime: deno / node.js / bun / QuickJS for some restricted or high-res (4K) videos.
 
-### Quick Start
-1. Download the prebuilt `yt_dlp_gui.exe` from [Releases](https://github.com/sa23up/yt-dlp-GUI/releases).
-2. Place `ffmpeg.exe` in the same directory (and `ffprobe.exe` if needed).
-3. Run `yt_dlp_gui.exe` and follow the prompts/UI.
+### Install Dependencies
+```bash
+pip install -U yt-dlp customtkinter
+# If you need EJS / advanced parsing:
+pip install -U yt-dlp-ejs
+```
 
-### Build with PyInstaller
-1. Install dependencies:
+### Install FFmpeg (Windows)
+1. Go to the Windows builds page (gyan.dev is recommended):
+   https://www.gyan.dev/ffmpeg/builds/
+   Under “release builds”, download `ffmpeg-release-essentials.zip` (or .7z).
+2. Extract and rename to a simple path, e.g., `C:\ffmpeg`. Make sure `C:\ffmpeg\bin` exists.
+3. Add to PATH:
+   - Press Win, search “Edit the system environment variables”, open → click “Environment Variables...”
+   - In “System variables”, select `Path` → “Edit...” → “New” → add `C:\ffmpeg\bin`.
+4. Verify:
    ```bash
-   pip install -r requirements.txt
-   # If you need EJS support:
-   pip install yt-dlp-ejs
+   ffmpeg -version
    ```
-2. Package with PyInstaller (example):
-   ```bash
-   pyinstaller -F -w main.py ^
-     --name your_app ^
-     --add-binary "ffmpeg.exe;." ^
-     --hidden-import yt_dlp_ejs
-   ```
-   > If you don’t use EJS, omit `--hidden-import yt_dlp_ejs`. You can also set `hiddenimports=['yt_dlp_ejs']` in the `.spec` file.
-3. The built executable will be in `dist/your_app.exe`.
+   If it shows version info, it’s installed correctly.
 
-### Validate the Build
-- Use `pyinstaller --clean --log-level=DEBUG ...` to clear cache and inspect missing dependency warnings.
-- Copy the generated `exe` to a clean directory or test machine without Python/your libs and run it.
-- Exercise key features (download, merge, EJS sites, etc.) to ensure there are no “No module named …” or “ffmpeg not found” errors.
+### JS Runtime (optional but often needed for 4K/restricted videos)
+- deno: https://deno.com/
+- node.js: https://nodejs.org
+- bun: https://bun.sh/
+- QuickJS: https://bellard.org/quickjs/
+Install any one and ensure it’s on your PATH. In the GUI you can select runtime=auto or specify a particular runtime + path.
 
-### FAQ
-- **Missing module / No module named …**: Ensure the library is installed and declared via `--hidden-import` or `hiddenimports` in the `.spec`.
-- **ffmpeg not found**: Ensure `ffmpeg.exe` is in the same directory as the app or on the PATH; static builds are recommended.
-- **Architecture mismatch**: Make sure Python/deps/ffmpeg match the target system architecture (x64 vs x86).
+### How to Run
+```bash
+python yt_dlp_gui.py
+```
+1) Enter video URL → click “Parse Formats”.
+2) In the dialog:
+   - “All formats” tab: pick a single format.
+   - “Video/Audio” tabs: multi-select to build batch combos.
+   - “Presets” tab: common format expressions (single choice).
+3) Back to main window: set output folder, options (audio-only, embed subtitles) → “Start”.
+4) Batch combos download one by one; progress/logs update in real time.
 
-- 
-### Unable to parse 4K video correctly
-
-Requires downloading Node.js. Download link: https://nodejs.org/en/download/current
+### Build to EXE (optional)
+```bash
+pip install -U pyinstaller
+cd /d C:\Users\del\Desktop\packexe
+pyinstaller -F -w yt_dlp_gui.py
+```
+- Output: `dist/yt_dlp_gui.exe`
+- Add icon: `--icon=your.ico`
+- Add resources via `--add-data` if needed.
 
