@@ -65,7 +65,7 @@ python yt_dlp_gui.py
 ### Build to EXE (optional)
 ```bash
 pip install -U pyinstaller
-cd /d C:\Users\del\Desktop\packexe
+cd /d C:\Users\yt_dlp_gui
 pyinstaller -F -w yt_dlp_gui.py
 ```
 - Output: `dist/yt_dlp_gui.exe`
