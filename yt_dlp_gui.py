@@ -220,6 +220,7 @@ class FormatSelectorDialog:
         self.nb_style_name = "TabFont.TNotebook"
         style = ttk.Style(self.dialog)
         style.configure(f"{self.nb_style_name}.Tab", font=("Microsoft YaHei", 13, "bold"))
+        # Treeview 大号字体样式（字体14，行高28，表头14 bold）
         self.tv_style_name = "Large.Treeview"
         style.configure(self.tv_style_name, font=("Microsoft YaHei", 14), rowheight=28)
         style.configure(f"{self.tv_style_name}.Heading", font=("Microsoft YaHei", 14, "bold"))
@@ -610,9 +611,6 @@ class YtDlpGUI:
         self.extract_audio = tk.BooleanVar(value=False)
         self.embed_subs = tk.BooleanVar(value=False)
 
-        # 检测/注入 ffmpeg 目录，兼容 PyInstaller onefile（sys._MEIPASS）与 onedir
-        self.ffmpeg_dir = self._setup_ffmpeg()
-
         self.root.grid_rowconfigure(0, weight=0)
         self.root.grid_rowconfigure(1, weight=1)
         self.root.grid_rowconfigure(2, weight=0)
@@ -624,25 +622,6 @@ class YtDlpGUI:
 
     def t(self, key):
         return LANG[self.lang].get(key, key)
-
-    def _setup_ffmpeg(self):
-        """
-        若打包后 ffmpeg/ffprobe 与 exe 同目录（onedir），或随 onefile 解压到临时目录，
-        则加入 PATH 并返回目录路径。
-        """
-        if getattr(sys, "_MEIPASS", None):
-            base = Path(sys._MEIPASS)  # onefile 解压目录
-        elif getattr(sys, "frozen", False):
-            base = Path(sys.executable).parent  # onedir
-        else:
-            base = Path(__file__).resolve().parent
-
-        ffmpeg = base / ("ffmpeg.exe" if os.name == "nt" else "ffmpeg")
-        ffprobe = base / ("ffprobe.exe" if os.name == "nt" else "ffprobe")
-        if ffmpeg.exists() and ffprobe.exists():
-            os.environ["PATH"] = str(base) + os.pathsep + os.environ.get("PATH", "")
-            return base
-        return None
 
     def _build_ui(self):
         self.root.title(self.t("app_title"))
@@ -855,21 +834,18 @@ class YtDlpGUI:
         return None if name == "none" else name
 
     def _check_environment(self):
-        if self.ffmpeg_dir:
-            self.log_message(f"ffmpeg bundled: {self.ffmpeg_dir}", "success")
+        ffmpeg = shutil.which("ffmpeg")
+        if not ffmpeg:
+            self.log_message("ffmpeg not found (merge may fail).", "warning")
         else:
-            ffmpeg = shutil.which("ffmpeg")
-            if not ffmpeg:
-                self.log_message("ffmpeg not found (merge may fail).", "warning")
-            else:
-                self.log_message(f"ffmpeg: {ffmpeg}", "success")
+            self.log_message(f"ffmpeg: {ffmpeg}", "success")
         if HAVE_EJS:
             self.log_message("yt-dlp-ejs detected.", "ejs")
         else:
             self.log_message("yt-dlp-ejs not found, will use remote ejs:github (if enabled).", "ejs")
 
     def parse_formats(self):
-        url = (self.url_var.get() or "").strip()  # strip 修正
+        url = (self.url_var.get() or "").strip()  # 修正为 strip()
         if not url:
             messagebox.showwarning(self.t("app_title"), self.t("no_url"))
             return
@@ -888,8 +864,6 @@ class YtDlpGUI:
             elif browser_name:
                 opts['cookiesfrombrowser'] = (browser_name, None, None, None)
             opts = self._augment_ejs_options(opts)
-            if self.ffmpeg_dir:
-                opts['ffmpeg_location'] = str(self.ffmpeg_dir)
             with YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(url, download=False)
             if not info:
@@ -1002,8 +976,6 @@ class YtDlpGUI:
             'quiet': False,
             'no_warnings': False,
         }
-        if self.ffmpeg_dir:
-            opts['ffmpeg_location'] = str(self.ffmpeg_dir)
         cookie_file = (self.cookie_file_path.get() or "").strip()
         browser_name = self.get_browser_name()
         if cookie_file and os.path.exists(cookie_file):
