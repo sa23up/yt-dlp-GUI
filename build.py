@@ -4,7 +4,6 @@ Nuitka 构建脚本（适用于本地与 GitHub Actions）
 - 入口文件：yt_dlp_gui.py
 - 模式：standalone（非 onefile）
 - 优化：LTO + -OO + 排除不必要模块
-- 输出：build/yt-dlp-gui.exe 与 build/yt-dlp-gui.msi（需 Nuitka 支持 --msi）
 """
 
 import subprocess
@@ -16,10 +15,10 @@ import os
 APP_NAME = "yt-dlp-gui"
 ENTRY = "yt_dlp_gui.py"
 VERSION = "0.1.0"  # 可按需同步 pyproject.toml
-UPGRADE_GUID = "{8F8E4E14-3A7E-4D59-9C49-7F2E1F2C0A10}"
 
 # 排除不需要的标准库模块（减小体积）
 EXCLUDED_MODULES = [
+    # 测试/开发相关
     "unittest",
     "pydoc",
     "doctest",
@@ -32,6 +31,55 @@ EXCLUDED_MODULES = [
     "pip",
     "ensurepip",
     "venv",
+    # 网络/协议相关（yt-dlp 自带处理）
+    "xmlrpc",
+    "ftplib",
+    "poplib",
+    "imaplib",
+    "smtplib",
+    "nntplib",
+    "telnetlib",
+    "cgi",
+    "cgitb",
+    # 数据库相关（未使用）
+    "sqlite3",
+    "dbm",
+    # 多进程相关（只用 threading）
+    "multiprocessing",
+    "concurrent",
+    # 调试/分析相关
+    "pdb",
+    "profile",
+    "cProfile",
+    "pstats",
+    "timeit",
+    "trace",
+    # 其他未使用的模块
+    "curses",
+    "turtle",
+    "turtledemo",
+    "antigravity",
+    "this",
+    "pty",
+    "tty",
+    "mailbox",
+    "mimetypes",
+    "audioop",
+    "aifc",
+    "sunau",
+    "wave",
+    "chunk",
+    "sndhdr",
+    "ossaudiodev",
+    "crypt",
+    "spwd",
+    "grp",
+    "termios",
+    "readline",
+    "rlcompleter",
+    "xdrlib",
+    "pipes",
+    "mailcap",
 ]
 
 # 排除 yt_dlp 中不需要的大型依赖
@@ -39,24 +87,15 @@ EXCLUDED_YTDLP = [
     "yt_dlp.extractor.lazy_extractors",
 ]
 
+# 编译时内存占用过大的模块，不跟踪导入（保持运行时动态导入）
+NOFOLLOW_HEAVY = [
+    "customtkinter.windows",
+]
+
 
 def run(cmd: list[str], env: dict | None = None) -> bool:
     print(">>>", " ".join(cmd))
     return subprocess.run(cmd, env=env).returncode == 0
-
-
-def nuitka_supports_msi() -> bool:
-    """检测当前 Nuitka 是否支持 --msi 参数。"""
-    try:
-        help_out = subprocess.check_output(
-            [sys.executable, "-m", "nuitka", "--help"],
-            text=True,
-            errors="ignore",
-        )
-        return "--msi" in help_out
-    except Exception as exc:  # noqa: BLE001
-        print(f"[warn] 无法检测 Nuitka 功能：{exc}")
-        return False
 
 
 def ensure_clean() -> None:
@@ -68,12 +107,6 @@ def ensure_clean() -> None:
 
 
 def build() -> bool:
-    support_msi = nuitka_supports_msi()
-    force_msi = os.getenv("FORCE_MSI", "").lower() in ("1", "true", "yes")
-    if force_msi and not support_msi:
-        print("[error] 当前 Nuitka 不支持 --msi；请升级 Nuitka 或取消 FORCE_MSI。")
-        return False
-
     cmd = [
         sys.executable,
         "-m",
@@ -92,7 +125,9 @@ def build() -> bool:
         f"--product-version={VERSION}",
         f"--file-version={VERSION}",
         "--include-package=yt_dlp",
-        "--include-module=sv_ttk",
+        # 使用 MSVC 编译器（比 MinGW 内存管理更好）
+        "--clang",
+        "--msvc=latest",
     ]
 
     # 排除不需要的模块以减小体积
@@ -100,16 +135,9 @@ def build() -> bool:
         cmd.append(f"--nofollow-import-to={mod}")
     for mod in EXCLUDED_YTDLP:
         cmd.append(f"--nofollow-import-to={mod}")
-
-    # 可选：生成 MSI 安装包（仅当支持 --msi）
-    if support_msi:
-        cmd.append(f"--msi-upgrade-guid={UPGRADE_GUID}")
-        cmd.append(f"--msi-version={VERSION}")
-        cmd.append("--msi-display-name=yt-dlp GUI")
-        cmd.append(f"--msi-name={APP_NAME}")
-        cmd.append("--msi")
-    else:
-        print("[info] 当前 Nuitka 版本未提供 --msi，已跳过 MSI 打包。")
+    # 不编译内存占用过大的模块（保持运行时动态导入）
+    for mod in NOFOLLOW_HEAVY:
+        cmd.append(f"--nofollow-import-to={mod}")
 
     icon_path = Path("asset/icon/icon.ico")
     if icon_path.exists():
@@ -127,14 +155,13 @@ def build() -> bool:
 
 def main() -> int:
     print("=" * 60)
-    print("Building yt-dlp GUI with Nuitka (LTO + -OO, standalone, MSI)")
+    print("Building yt-dlp GUI with Nuitka (LTO + -OO, standalone)")
     print("=" * 60)
     ensure_clean()
     ok = build()
     if ok:
         print("\n[OK] Build finished.")
-        print("  可执行文件: build/yt-dlp-gui.exe")
-        print("  安装包:     build/yt-dlp-gui.msi（需 Nuitka 支持 --msi）")
+        print("  可执行文件: build/yt-dlp-gui.dist/yt-dlp-gui.exe")
     else:
         print("\n[ERROR] Build failed.")
     return 0 if ok else 1
