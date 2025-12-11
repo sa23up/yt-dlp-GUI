@@ -70,7 +70,7 @@ pip install -U yt-dlp-ejs
 ### 打包为 exe（可选）
 ```bash
 pip install -U pyinstaller
-cd /d C:\Users\del\Desktop\packexe
+cd /d C:\Users\yt_dlp_gui
 pyinstaller -F -w yt_dlp_gui.py
 ```
 - 生成文件：`dist/yt_dlp_gui.exe`
