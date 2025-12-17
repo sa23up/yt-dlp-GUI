@@ -17,6 +17,7 @@ ENTRY = "yt_dlp_gui.py"
 VERSION = "0.1.0"  # 可按需同步 pyproject.toml
 
 # 排除不需要的标准库模块（减小体积）
+# 注意：对标准库做 --nofollow-import-to 过于激进会导致运行时缺模块（例如 yt_dlp 依赖 urllib.request -> mimetypes）。
 EXCLUDED_MODULES = [
     # 测试/开发相关
     "unittest",
@@ -27,59 +28,9 @@ EXCLUDED_MODULES = [
     "lib2to3",
     "test",
     "distutils",
-    "setuptools",
     "pip",
     "ensurepip",
     "venv",
-    # 网络/协议相关（yt-dlp 自带处理）
-    "xmlrpc",
-    "ftplib",
-    "poplib",
-    "imaplib",
-    "smtplib",
-    "nntplib",
-    "telnetlib",
-    "cgi",
-    "cgitb",
-    # 数据库相关（未使用）
-    "sqlite3",
-    "dbm",
-    # 多进程相关（只用 threading）
-    "multiprocessing",
-    "concurrent",
-    # 调试/分析相关
-    "pdb",
-    "profile",
-    "cProfile",
-    "pstats",
-    "timeit",
-    "trace",
-    # 其他未使用的模块
-    "curses",
-    "turtle",
-    "turtledemo",
-    "antigravity",
-    "this",
-    "pty",
-    "tty",
-    "mailbox",
-    "mimetypes",
-    "audioop",
-    "aifc",
-    "sunau",
-    "wave",
-    "chunk",
-    "sndhdr",
-    "ossaudiodev",
-    "crypt",
-    "spwd",
-    "grp",
-    "termios",
-    "readline",
-    "rlcompleter",
-    "xdrlib",
-    "pipes",
-    "mailcap",
 ]
 
 # 排除 yt_dlp 中不需要的大型依赖
@@ -89,8 +40,41 @@ EXCLUDED_YTDLP = [
 
 # 编译时内存占用过大的模块，不跟踪导入（保持运行时动态导入）
 NOFOLLOW_HEAVY = [
-    "customtkinter.windows",
 ]
+
+def find_clang_cl() -> str | None:
+    clang_from_path = shutil.which("clang-cl")
+    if clang_from_path:
+        return clang_from_path
+
+    program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+    candidates = [
+        Path(program_files)
+        / r"Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\x64\bin\clang-cl.exe",
+        Path(program_files)
+        / r"Microsoft Visual Studio\2022\Professional\VC\Tools\Llvm\x64\bin\clang-cl.exe",
+        Path(program_files)
+        / r"Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin\clang-cl.exe",
+        Path(program_files)
+        / r"Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin\clang-cl.exe",
+        Path(program_files) / r"LLVM\bin\clang-cl.exe",
+    ]
+
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+
+    return None
+
+
+def has_windows_sdk() -> bool:
+    program_files_x86 = os.environ.get("ProgramFiles(x86)")
+    if not program_files_x86:
+        return False
+
+    return (Path(program_files_x86) / r"Windows Kits\10\Include").is_dir() or (
+        Path(program_files_x86) / r"Windows Kits\11\Include"
+    ).is_dir()
 
 
 def run(cmd: list[str], env: dict | None = None) -> bool:
@@ -112,7 +96,7 @@ def build() -> bool:
         "-m",
         "nuitka",
         "--standalone",
-        "--enable-plugin=tk-inter",
+        "--enable-plugins=tk-inter",
         "--lto=yes",
         "--python-flag=-OO",
         "--assume-yes-for-downloads",
@@ -125,10 +109,17 @@ def build() -> bool:
         f"--product-version={VERSION}",
         f"--file-version={VERSION}",
         "--include-package=yt_dlp",
-        # 使用 MSVC 编译器（比 MinGW 内存管理更好）
-        "--clang",
+        "--include-package=customtkinter",
+        # 使用 MSVC 编译器（可选：安装 VS Clang 组件后可启用 clang-cl）
         "--msvc=latest",
     ]
+
+    if find_clang_cl():
+        cmd.append("--clang")
+    else:
+        print("[WARN] 未检测到 Visual Studio Clang 组件，将使用 MSVC (cl.exe) 编译。若失败，请在 VS Installer 安装 Windows SDK（Windows 10/11 SDK）。")
+    if not has_windows_sdk():
+        print("[WARN] 未检测到 Windows SDK（Windows Kits）。如果编译报错找不到 Windows 头文件/库，请在 VS Installer 安装 Windows 10/11 SDK。")
 
     # 排除不需要的模块以减小体积
     for mod in EXCLUDED_MODULES:
