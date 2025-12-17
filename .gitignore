@@ -15,6 +15,7 @@ build/
 *.onefile-dist/
 dist/
 *.spec
+nuitka-crash-report.xml
 
 # Logs
 *.log
