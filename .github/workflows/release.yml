@@ -1,0 +1,60 @@
+name: Build & Release (Windows)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build_windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade uv
+          uv --version
+
+      - name: Install dependencies
+        run: uv sync --dev --frozen
+
+      - name: Build (Nuitka onefile via build.ps1)
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = if ($tag.StartsWith("v")) { $tag.Substring(1) } else { $tag }
+          Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+          .\build.ps1 -Configuration Release -Version $version
+
+      - name: SHA256
+        shell: pwsh
+        run: |
+          $exeName = "yt-dlp-gui.exe"
+          $buildDir = (Resolve-Path "build").Path
+          $found = Get-ChildItem -Path $buildDir -Recurse -File -Filter $exeName -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $found) { throw "未找到产物: build/**/$exeName" }
+          $target = Join-Path $buildDir $exeName
+          if ($found.FullName -ne $target) {
+            Copy-Item $found.FullName $target -Force
+          }
+          $hash = (Get-FileHash $target -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $exeName" | Out-File -Encoding ascii (Join-Path $buildDir "$exeName.sha256")
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/yt-dlp-gui.exe
+            build/yt-dlp-gui.exe.sha256
