@@ -2,7 +2,7 @@
 
 ## Project Structure
 - `yt_dlp_gui.py`: main application (CustomTkinter GUI + `yt-dlp` integration).
-- `build.py`: Windows-focused Nuitka build script (standalone output).
+- `build.ps1`: Windows-focused Nuitka build script (standalone output).
 - `pyproject.toml` / `uv.lock`: dependency metadata for `uv` (Python `>=3.12`).
 - `README.md` / `README.en.md`: user-facing documentation.
 - Local-only (ignored): `.venv/`, `build/`, `dist/`, `.serena/`.
@@ -11,7 +11,7 @@
 - Install dependencies (recommended): `uv sync --dev`
 - Run locally: `uv run python yt_dlp_gui.py`
 - Update lockfile after changing dependencies: `uv lock`
-- Build with Nuitka: `uv run python build.py` (outputs to `build/yt_dlp_gui.dist/`)
+- Build with Nuitka: `.\build.ps1 -Configuration Release` (outputs to `build/yt_dlp_gui.dist/`)
 - Build with PyInstaller (optional): `pip install -U pyinstaller` then `pyinstaller -F -w yt_dlp_gui.py`
 
 ## Coding Style & Naming Conventions

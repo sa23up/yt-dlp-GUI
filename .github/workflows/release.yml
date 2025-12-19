@@ -15,6 +15,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Derive version
+        id: ver
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = if ($tag.StartsWith("v")) { $tag.Substring(1) } else { $tag }
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$version"
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -30,31 +38,91 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev --frozen
 
-      - name: Build (Nuitka onefile via build.ps1)
+      - name: Build (Nuitka standalone)
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
-          $version = if ($tag.StartsWith("v")) { $tag.Substring(1) } else { $tag }
+          $version = '${{ steps.ver.outputs.version }}'
           Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-          .\build.ps1 -Configuration Release -Version $version
+          .\build.ps1 -Configuration Release -Mode standalone -Version $version -OutputDir build
 
-      - name: SHA256
+      - name: Build (Nuitka onefile)
         shell: pwsh
         run: |
-          $exeName = "yt-dlp-gui.exe"
-          $buildDir = (Resolve-Path "build").Path
-          $found = Get-ChildItem -Path $buildDir -Recurse -File -Filter $exeName -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $found) { throw "未找到产物: build/**/$exeName" }
-          $target = Join-Path $buildDir $exeName
-          if ($found.FullName -ne $target) {
-            Copy-Item $found.FullName $target -Force
-          }
-          $hash = (Get-FileHash $target -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  $exeName" | Out-File -Encoding ascii (Join-Path $buildDir "$exeName.sha256")
+          $version = '${{ steps.ver.outputs.version }}'
+          Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+          .\build.ps1 -Configuration Release -Mode onefile -Version $version -OutputDir build/onefile
+
+      - name: Build installer (Inno Setup)
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: installer/yt-dlp-gui.iss
+          options: /DMyAppVersion=${{ steps.ver.outputs.version }}
+
+      - name: SHA256 (setup)
+        id: setup
+        shell: pwsh
+        run: |
+          $version = '${{ steps.ver.outputs.version }}'
+          $setupName = "yt-dlp-gui-$version-windows-setup.exe"
+          $setupPath = "build/$setupName"
+          if (-not (Test-Path $setupPath -PathType Leaf)) { throw "未找到安装包: $setupPath" }
+          $shaPath = "$setupPath.sha256"
+          $hash = (Get-FileHash $setupPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $setupName" | Out-File -Encoding ascii $shaPath
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "exe=$setupPath"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "sha=$shaPath"
+
+      - name: Package (portable zip) + SHA256
+        id: portable
+        shell: pwsh
+        run: |
+          $version = '${{ steps.ver.outputs.version }}'
+          $distDir = "build/yt_dlp_gui.dist"
+          if (-not (Test-Path $distDir -PathType Container)) { throw "未找到产物目录: $distDir" }
+
+          $portableRoot = "build/yt-dlp-gui-$version-windows-portable"
+          if (Test-Path $portableRoot) { Remove-Item -Path $portableRoot -Recurse -Force }
+          New-Item -ItemType Directory -Path $portableRoot | Out-Null
+          Copy-Item -Path "$distDir/*" -Destination $portableRoot -Recurse -Force
+
+          $zipName = "yt-dlp-gui-$version-windows-portable.zip"
+          $zipPath = "build/$zipName"
+          if (Test-Path $zipPath) { Remove-Item -Path $zipPath -Force }
+          Compress-Archive -Path $portableRoot -DestinationPath $zipPath
+          Remove-Item -Path $portableRoot -Recurse -Force
+
+          $shaPath = "$zipPath.sha256"
+          $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $zipName" | Out-File -Encoding ascii $shaPath
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "zip=$zipPath"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "sha=$shaPath"
+
+      - name: Prepare (onefile exe) + SHA256
+        id: onefile
+        shell: pwsh
+        run: |
+          $version = '${{ steps.ver.outputs.version }}'
+          $found = Get-ChildItem -Path "build/onefile" -Recurse -File -Filter "yt-dlp-gui.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $found) { throw "未找到 onefile 产物: build/onefile/**/yt-dlp-gui.exe" }
+
+          $exeName = "yt-dlp-gui-$version-windows-onefile.exe"
+          $exePath = "build/$exeName"
+          Copy-Item -Path $found.FullName -Destination $exePath -Force
+
+          $shaPath = "$exePath.sha256"
+          $hash = (Get-FileHash $exePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $exeName" | Out-File -Encoding ascii $shaPath
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "exe=$exePath"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "sha=$shaPath"
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          fail_on_unmatched_files: true
           files: |
-            build/yt-dlp-gui.exe
-            build/yt-dlp-gui.exe.sha256
+            ${{ steps.setup.outputs.exe }}
+            ${{ steps.setup.outputs.sha }}
+            ${{ steps.portable.outputs.zip }}
+            ${{ steps.portable.outputs.sha }}
+            ${{ steps.onefile.outputs.exe }}
+            ${{ steps.onefile.outputs.sha }}

@@ -1,6 +1,6 @@
 ﻿# Repository build script (Nuitka)
 # - 默认 Release：最高优化 + 清理调试符号
-# - 编译模式：onefile（不使用 standalone）
+# - 编译模式：standalone / onefile
 
 #requires -Version 5.1
 
@@ -13,11 +13,14 @@ param(
     [string]$AppName = 'yt-dlp-gui',
     [string]$Version = '0.1.0',
 
-    [string]$OutputDir = 'build',
-    [string]$OutputFilename = 'yt-dlp-gui.exe',
+	    [string]$OutputDir = 'build',
+	    [string]$OutputFilename = 'yt-dlp-gui.exe',
 
-    [ValidateSet('auto', 'msvc', 'clang')]
-    [string]$Toolchain = 'auto',
+	    [ValidateSet('standalone', 'onefile')]
+	    [string]$Mode = 'standalone',
+
+	    [ValidateSet('auto', 'msvc', 'clang')]
+	    [string]$Toolchain = 'auto',
 
     [switch]$NoClean,
     [switch]$DryRun
@@ -55,26 +58,33 @@ try {
         throw ("入口文件不存在: {0}" -f $Entry)
     }
 
-    $entryBase = [System.IO.Path]::GetFileNameWithoutExtension($Entry)
+	    $entryBase = [System.IO.Path]::GetFileNameWithoutExtension($Entry)
 
-    if (-not $NoClean) {
-        $cleanTargets = @(
-            $OutputDir,
-            "$entryBase.build",
-            "$entryBase.dist",
-            "$entryBase.onefile-build",
-            "$entryBase.onefile-dist",
-            "$AppName.build",
-            "$AppName.dist",
-            "$AppName.onefile-build",
-            "$AppName.onefile-dist"
-        ) | Where-Object { $_ -and (Test-Path -Path $_) } | Sort-Object -Unique
+	    if (-not $NoClean) {
+	        $modeArtifacts = @()
+	        if ($Mode -eq 'onefile') {
+	            $modeArtifacts = @(
+	                "$entryBase.onefile-build",
+	                "$entryBase.onefile-dist",
+	                "$AppName.onefile-build",
+	                "$AppName.onefile-dist"
+	            )
+	        }
 
-        foreach ($t in $cleanTargets) {
-            Write-Host "[clean] removing $t"
-            Remove-Item -Path $t -Recurse -Force
-        }
-    }
+	        $cleanTargets = @(
+	            $OutputDir,
+	            "$entryBase.build",
+	            "$entryBase.dist",
+	            "$AppName.build",
+	            "$AppName.dist"
+	        ) + $modeArtifacts
+	        $cleanTargets = $cleanTargets | Where-Object { $_ -and (Test-Path -Path $_) } | Sort-Object -Unique
+
+	        foreach ($t in $cleanTargets) {
+	            Write-Host "[clean] removing $t"
+	            Remove-Item -Path $t -Recurse -Force
+	        }
+	    }
 
     # 排除不需要的标准库模块（减小体积）
     # 注意：对标准库做 --nofollow-import-to 过于激进会导致运行时缺模块（例如 yt_dlp 依赖 urllib.request -> mimetypes）。
@@ -88,17 +98,20 @@ try {
         'yt_dlp.extractor.lazy_extractors'
     )
 
-    # 预留：编译时内存占用过大的模块可在此加入 nofollow 列表
-    # 注意：对 GUI 依赖（如 customtkinter）使用 nofollow 可能导致运行时报缺模块
-    $noFollowHeavy = @()
+	    # 预留：编译时内存占用过大的模块可在此加入 nofollow 列表
+	    # 注意：对 GUI 依赖（如 customtkinter）使用 nofollow 可能导致运行时报缺模块
+	    $noFollowHeavy = @()
 
-    $nuitkaArgs = @(
-        '--mode=onefile',
-        '--enable-plugins=tk-inter',
-        '--assume-yes-for-downloads',
-        '--remove-output',
+	    $modeArg = if ($Mode -eq 'onefile') { '--mode=onefile' } else { '--standalone' }
+
+	    $nuitkaArgs = @(
+	        $modeArg,
+	        '--enable-plugins=tk-inter',
+	        '--assume-yes-for-downloads',
+	        '--remove-output',
         "--output-dir=$OutputDir",
         "--output-filename=$OutputFilename",
+        '--windows-console-mode=disable',
         "--company-name=$AppName",
         "--product-name=$AppName",
         "--product-version=$Version",
