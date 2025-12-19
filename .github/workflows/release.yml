@@ -2,6 +2,8 @@ name: Build & Release (Windows)
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
 
@@ -19,9 +21,17 @@ jobs:
         id: ver
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
-          $version = if ($tag.StartsWith("v")) { $tag.Substring(1) } else { $tag }
+          $ref = "${{ github.ref }}"
+          $refName = "${{ github.ref_name }}"
+          $isRelease = $ref.StartsWith("refs/tags/v")
+
+          # 注意：
+          # - tag 构建：版本来自 vX.Y.Z（用于 exe 版本信息与安装包文件名）
+          # - main 构建：使用占位版本（仅用于验证构建流程），并跳过发布 Release
+          $version = if ($isRelease) { $refName.Substring(1) } else { "0.0.0" }
+
           Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$version"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "is_release=$isRelease"
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -116,6 +126,7 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "sha=$shaPath"
 
       - name: Upload to GitHub Release
+        if: steps.ver.outputs.is_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
           fail_on_unmatched_files: true
