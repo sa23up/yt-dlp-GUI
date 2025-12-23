@@ -650,20 +650,11 @@ class YtDlpGUI:
         self.basic_tab = self.tabview.add(self.t("tab_basic"))
         self.adv_tab = self.tabview.add(self.t("tab_adv"))
         for tab in (self.basic_tab, self.adv_tab):
-            tab.grid_rowconfigure(0, weight=1)
-            tab.grid_columnconfigure(0, weight=1)
+            tab.grid_columnconfigure(0, weight=0)
+            tab.grid_columnconfigure(1, weight=1)
 
-        basic_view = ctk.CTkScrollableFrame(self.basic_tab, corner_radius=0)
-        basic_view.grid(row=0, column=0, sticky="nsew")
-        adv_view = ctk.CTkScrollableFrame(self.adv_tab, corner_radius=0)
-        adv_view.grid(row=0, column=0, sticky="nsew")
-
-        for view in (basic_view, adv_view):
-            view.grid_columnconfigure(0, weight=0)
-            view.grid_columnconfigure(1, weight=1)
-
-        self._build_basic_tab(basic_view)
-        self._build_adv_tab(adv_view)
+        self._build_basic_tab(self.basic_tab)
+        self._build_adv_tab(self.adv_tab)
         self._build_bottom()
 
     def _on_language_changed(self, _val=None):
