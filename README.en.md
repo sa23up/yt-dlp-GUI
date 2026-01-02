@@ -72,3 +72,6 @@ pyinstaller -F -w yt_dlp_gui.py
 - Add icon: `--icon=your.ico`
 - Add resources via `--add-data` if needed.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=sa23up/yt-dlp-GUI&type=date&legend=top-left)](https://www.star-history.com/#sa23up/yt-dlp-GUI&type=date&legend=top-left)
