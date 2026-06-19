@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "rust-lang.rust-analyzer",
+    "tauri-apps.tauri-vscode",
+    "Vue.volar",
+    "dbaeumer.vscode-eslint",
+    "editorconfig.editorconfig",
+    "usernamehw.errorlens"
+  ],
+  "unwantedRecommendations": [
+    "octref.vetur"
+  ]
+}

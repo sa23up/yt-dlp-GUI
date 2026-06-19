@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🗨️ 问答讨论 / Q&A Discussion
+    url: https://github.com/sa23up/yt-dlp-GUI/discussions/categories/q-a
+    about: 使用问题、配置帮助 / Usage questions and configuration help
+  - name: 💡 想法讨论 / Ideas Discussion
+    url: https://github.com/sa23up/yt-dlp-GUI/discussions/categories/ideas
+    about: 分享想法和建议 / Share ideas and suggestions
+  - name: 🔒 安全漏洞 / Security Vulnerability
+    url: https://github.com/sa23up/yt-dlp-GUI/security/advisories
+    about: 私密报告安全问题 / Report security issues privately

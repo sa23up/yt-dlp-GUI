@@ -1,0 +1,8 @@
+# This directory contains bundled external binaries (yt-dlp, ffmpeg, deno)
+# downloaded by CI during the release workflow. These are NOT checked into git.
+
+# Ignore all files in this directory
+*
+
+# Except this .gitignore file itself
+!.gitignore

@@ -1,0 +1,13 @@
+{
+  "yt_dlp": "2026.03.17",
+  "yt_dlp_sha256": {
+    "linux": "c2b0189f581fe4a2ddd41954f1bcb7d327db04b07ed0dea97e4f1b3e09b5dd8e",
+    "windows": "3db811b366b2da47337d2fcfdfe5bbd9a258dad3f350c54974f005df115a1545"
+  },
+  "ffmpeg": "latest",
+  "deno": "v2.7.14",
+  "deno_sha256": {
+    "linux": "3287efef53606966469cb6a02781327be22b908959397f976e2996dc1b64ae0f",
+    "windows": "25f9871f5c1d9e999d60071f8069767134495fd601d2e2c7ce1e8c641487bda0"
+  }
+}

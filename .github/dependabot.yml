@@ -1,0 +1,54 @@
+version: 2
+updates:
+  # Rust dependencies
+  - package-ecosystem: "cargo"
+    directory: "/src-tauri"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "rust"
+    groups:
+      tauri:
+        patterns:
+          - "tauri*"
+      security:
+        update-types:
+          - "security"
+
+  # npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+    groups:
+      vue:
+        patterns:
+          - "vue*"
+          - "@vue/*"
+      tauri:
+        patterns:
+          - "@tauri-apps/*"
+      vite:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
+      security:
+        update-types:
+          - "security"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "github-actions"

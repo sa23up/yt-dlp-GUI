@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "yt-dlp-gui",
+  "version": "0.1.0",
+  "identifier": "com.github.sa23up.yt-dlp-gui",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "yt-dlp-gui",
+        "width": 1100,
+        "height": 750,
+        "minWidth": 880,
+        "minHeight": 560
+      }
+    ],
+    "security": {
+      "csp": "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' ipc: http://ipc.localhost; font-src 'self' data:; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/sa23up/yt-dlp-GUI/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVERENENERFMjYwNjgxODAKUldTQWdRWW0zdFRjWFgxL0UvVC9GbDJyT2JBczhNL2Vmd1FCRlN1WnRYK2lZYWFJb3FNbytwT1cK",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "appimage", "msi", "nsis"],
+    "createUpdaterArtifacts": true,
+    "resources": {
+      "binaries/*": "binaries/"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

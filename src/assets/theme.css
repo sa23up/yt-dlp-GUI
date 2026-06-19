@@ -1,0 +1,318 @@
+/* Bundled latin-subset variable fonts. Shipped locally rather than loaded from
+   the Google Fonts CDN so the app works offline and stays within the strict CSP
+   (font-src 'self'); CJK still falls back to the system stack (PingFang/YaHei),
+   which these fonts don't cover. */
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./fonts/plus-jakarta-sans-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("./fonts/jetbrains-mono-latin.woff2") format("woff2");
+}
+
+/* Theme tokens — single source of truth.
+   Each variable has a dark default and a light override via [data-theme="light"].
+
+   Hybrid C dual-accent model:
+   - `--brand-*` (YouTube red) is the DOWNLOAD semantic — primary CTA,
+     progress fill, running indicator pulse, brand chip.
+   - `--accent-*` (macOS system blue) is the NAVIGATION semantic — selected
+     row, focus ring, link, native form-control accent. */
+
+:root, [data-theme="dark"] {
+  /* macOS material backgrounds (Liquid-Glass-friendly) */
+  --bg-base:      #1E1E1E;
+  --bg-surface:   #242424;
+  --bg-sidebar:   rgba(30, 30, 30, 0.72);
+  --bg-toolbar:   rgba(30, 30, 30, 0.80);
+  --bg-popover:   rgba(40, 40, 40, 0.88);
+  --bg-sheet:     #2C2C2E;
+  --bg-elevated:  #2A2A2A;
+  /* Opaque sidebar / toolbar fallback when @supports not (backdrop-filter)
+     or prefers-reduced-transparency: reduce */
+  --bg-sidebar-opaque: #232323;
+  --bg-toolbar-opaque: #262626;
+  /* Borders / separators / rails */
+  --border:        rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+  --separator:     rgba(255,255,255,0.10);
+  --divider:       rgba(255,255,255,0.05);
+  --rail:          rgba(255,255,255,0.10);
+  /* Apple-style label hierarchy via alpha-on-label (NOT gray hex).
+     This is what lets translucent surfaces still render readable text. */
+  --label:             rgba(255,255,255,1.00);
+  --label-secondary:   rgba(255,255,255,0.65);
+  --label-tertiary:    rgba(255,255,255,0.40);
+  --label-quaternary:  rgba(255,255,255,0.22);
+  --placeholder:       rgba(255,255,255,0.36);
+  /* Legacy text-* aliases so existing components don't break.
+     Body text reads from --label / --label-secondary. */
+  --text-1:       var(--label);
+  --text-2:       var(--label-secondary);
+  --text-3:       var(--label-tertiary);
+  --input-bg:     rgba(255,255,255,0.06);
+  --hover-bg:     rgba(255,255,255,0.06);
+
+  /* ─── Brand (download semantic) — DARK: lifted red (DS §1.1a) ──────
+     #FF0000 on #1E1E1E reads as "black with a red tint"; macOS lifts
+     systemRed the same way in dark appearance. */
+  --brand:         #FF2222;
+  --brand-hover:   #FF4444;
+  --brand-pressed: #FF0F0F;
+  --brand-soft:    rgba(255,34,34,0.16);
+  --brand-softer:  rgba(255,34,34,0.10);
+
+  /* ─── Accent (navigation semantic) — DARK: systemBlue dark (DS §1.1b) ── */
+  --accent:         #0A84FF;
+  --accent-hover:   #1F8FFF;
+  --accent-pressed: #5AB0FF;
+  --accent-soft:    rgba(10,132,255,0.18);
+  --accent-border:  rgba(10,132,255,0.40);
+
+  /* ─── Semantic status — DARK variants (DS §1.2) ──────────────── */
+  --ok:           #30D158;
+  --warn:         #FF9F0A;
+  --err:          #FF453A;
+  --info:         #64D2FF;
+  --err-soft:     rgba(255,69,58,0.12);
+  --err-softer:   rgba(255,69,58,0.08);
+  --err-border:   rgba(255,69,58,0.30);
+
+  /* ─── Elevation — DARK (DS §3.3) ──────────────────────────────
+     Deeper alpha than light: a 5–10% black shadow is invisible on a
+     #1E1E1E surface, so dark elevation needs ~0.3–0.55 to read at all. */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.32);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.40);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.48);
+  --shadow-xl: 0 16px 40px rgba(0,0,0,0.55);
+}
+
+[data-theme="light"] {
+  --bg-base:      #ECECEC;
+  --bg-surface:   #FFFFFF;
+  --bg-sidebar:   rgba(246, 246, 246, 0.72);
+  --bg-toolbar:   rgba(246, 246, 246, 0.80);
+  --bg-popover:   rgba(255, 255, 255, 0.88);
+  --bg-sheet:     #F6F6F6;
+  --bg-elevated:  #F2F2F2;
+  --bg-sidebar-opaque: #F5F5F5;
+  --bg-toolbar-opaque: #F2F2F2;
+  --border:        rgba(0,0,0,0.10);
+  --border-strong: rgba(0,0,0,0.16);
+  --separator:     rgba(0,0,0,0.10);
+  --divider:       rgba(0,0,0,0.05);
+  --rail:          rgba(0,0,0,0.08);
+  --label:             rgba(0,0,0,1.00);
+  --label-secondary:   rgba(0,0,0,0.65);
+  --label-tertiary:    rgba(0,0,0,0.40);
+  --label-quaternary:  rgba(0,0,0,0.22);
+  --placeholder:       rgba(0,0,0,0.36);
+  --text-1:       var(--label);
+  --text-2:       var(--label-secondary);
+  --text-3:       var(--label-tertiary);
+  --input-bg:     #FFFFFF;
+  --hover-bg:     rgba(0,0,0,0.06);
+
+  /* Brand / accent / status — LIGHT values (DS §1.1, §1.2) */
+  --brand:         #FF0000;
+  --brand-hover:   #E60000;
+  --brand-pressed: #CC0000;
+  --brand-soft:    rgba(255,0,0,0.10);
+  --brand-softer:  rgba(255,0,0,0.06);
+
+  --accent:         #007AFF;
+  --accent-hover:   #0066CC;
+  --accent-pressed: #0050A8;
+  --accent-soft:    rgba(0,122,255,0.10);
+  --accent-border:  rgba(0,122,255,0.32);
+
+  --ok:           #34C759;
+  --warn:         #FF9500;
+  --err:          #FF3B30;
+  --info:         #5AC8FA;
+  --err-soft:     rgba(255,59,48,0.08);
+  --err-softer:   rgba(255,59,48,0.06);
+  --err-border:   rgba(255,59,48,0.25);
+
+  /* ─── Elevation — LIGHT (DS §3.3) ─────────────────────────────
+     Black alpha on white surfaces; shallow values read fine here. */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.14);
+  --shadow-xl: 0 16px 40px rgba(0,0,0,0.18);
+
+  /* macOS uses subpixel AA on light surfaces, grayscale on dark (DS §2.4). */
+  -webkit-font-smoothing: auto;
+}
+
+:root {
+  /* 生成一个极微弱的噪点背景图，增加物理质感 */
+  --noise-bg: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.03"/%3E%3C/svg%3E');
+
+  /* ─── Theme-independent accent constants ───────────────────────
+     Per-theme brand/accent/status values live in the [data-theme] blocks
+     above (dark uses lifted variants per DS §1.1) — only the foregrounds
+     placed ON those fills are constant. */
+  --brand-on:      #FFFFFF;
+  --accent-on:     #FFFFFF;
+
+  /* ─── Geometry ─────────────────────────────────────────────── */
+  --radius-sm:    6px;   /* tags, small chips */
+  --radius:       8px;   /* button, input */
+  --radius-lg:    10px;  /* card, sheet, window — macOS standard */
+  --radius-xl:    12px;  /* large container */
+
+  /* ─── Typography ────────────────────────────────────────────
+     -apple-system resolves to SF Pro Text/Display by size on macOS.
+     Falls back through BlinkMacSystemFont (Chromium) and Segoe UI (Win),
+     PingFang/MS YaHei (CJK), Inter (last). */
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+               system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei",
+               sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+               monospace;
+
+  /* ─── Motion ──────────────────────────────────────────────── */
+  --ease-default:  cubic-bezier(0.4, 0.0, 0.2, 1);
+  --ease-out:      cubic-bezier(0.0, 0.0, 0.58, 1);
+  --ease-in:       cubic-bezier(0.42, 0.0, 1.0, 1);
+  /* Spring curves matching macOS feel */
+  --spring-snappy: cubic-bezier(0.5, 1.6, 0.4, 1);     /* popover overshoot */
+  --spring-smooth: cubic-bezier(0.32, 0.72, 0, 1);     /* sheet present */
+  --dur-instant:   100ms;
+  --dur-fast:      150ms;
+  --dur-base:      200ms;
+  --dur-slow:      300ms;
+
+  /* Native form-control accent — checkboxes, radios, range, scroll markers.
+     var() resolves per theme (dark = #0A84FF, light = #007AFF). */
+  accent-color:    var(--accent);
+  /* Hint native UA to render scrollbars / form controls theme-appropriately */
+  color-scheme:    dark light;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  overflow: hidden;
+  background: var(--bg-base);
+  color: var(--label);
+  font-family: var(--font-sans);
+}
+
+#app {
+  font-family: var(--font-sans);
+}
+
+/* Every running counter is tabular-num so layout doesn't jitter each tick. */
+.tabular,
+.percent,
+.bar + *,
+.row-meta,
+.size,
+.count,
+.val {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbars — declarative thin/auto-color via the CSS spec (Firefox + new WebKit);
+   plus a minimal ::-webkit-scrollbar fallback that exists ONLY to neutralize
+   WebKitGTK's tendency to paint scrollbars in the system theme accent
+   (Ubuntu/Yaru green, etc.). We're not styling scrollbars for visual flair —
+   we're isolating them from the host OS palette. DS §3.4's "let WebView
+   defaults stand" assumes the WebView default is itself neutral, which
+   WebKitGTK's isn't. On macOS WebKit overlay scrollbars override these. */
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--label-tertiary); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* Text selection — same reason: WebKitGTK uses the system theme color for
+   selection by default, which is green on Ubuntu/Yaru. Lock to our accent. */
+::selection {
+  background: var(--accent-soft);
+  color: var(--label);
+}
+
+/* Naive-ui card uses an inner border; align to our tokens */
+.n-card {
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+  background: var(--bg-surface) !important;
+}
+
+button { font-family: inherit; }
+
+/* Global focus ring — uses ACCENT (navigation semantic), never brand red.
+   Visible 2px outline + soft halo for keyboard users. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Screen-reader-only — used for visually-hidden headings & skip links. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.sr-only.focusable:focus,
+.sr-only.focusable:focus-visible {
+  position: fixed;
+  top: 8px; left: 8px;
+  width: auto; height: auto;
+  padding: 8px 12px;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  background: var(--bg-surface);
+  color: var(--label);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  z-index: 9999;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Vibrancy fallback for browsers without backdrop-filter. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root, [data-theme="dark"] { --bg-sidebar: var(--bg-sidebar-opaque); --bg-toolbar: var(--bg-toolbar-opaque); }
+  [data-theme="light"]       { --bg-sidebar: var(--bg-sidebar-opaque); --bg-toolbar: var(--bg-toolbar-opaque); }
+}
+
+/* prefers-reduced-transparency: replace vibrancy with opaque equivalents. */
+@media (prefers-reduced-transparency: reduce) {
+  :root, [data-theme="dark"] { --bg-sidebar: var(--bg-sidebar-opaque); --bg-toolbar: var(--bg-toolbar-opaque); }
+  [data-theme="light"]       { --bg-sidebar: var(--bg-sidebar-opaque); --bg-toolbar: var(--bg-toolbar-opaque); }
+}
+
+/* Reduced-motion mandate. Respects OS-level setting. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

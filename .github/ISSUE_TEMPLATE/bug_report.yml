@@ -1,0 +1,93 @@
+name: Bug Report / 错误报告
+description: 报告一个问题帮助我们改进 / Report a problem to help us improve
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你花时间填写这个错误报告！/ Thanks for taking the time to fill out this bug report!
+
+        请搜索现有 Issues 以避免重复提交。/ Please search existing issues to avoid duplicates.
+
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本 / App Version
+      description: 在「设置」页面查看版本号 / Check version in Settings page
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统 / Operating System
+      options:
+        - Windows 10
+        - Windows 11
+        - Ubuntu / Debian
+        - Arch Linux
+        - Other Linux
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 发生了什么？/ What happened?
+      description: 清晰简洁地描述 bug / A clear and concise description of the bug
+      placeholder: 告诉我们你看到了什么！/ Tell us what you see!
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤 / Steps to Reproduce
+      description: 如何触发这个 bug？/ How can we reproduce this bug?
+      placeholder: |
+        1. 打开应用
+        2. 粘贴 URL '...'
+        3. 点击「开始下载」
+        4. 看到错误 '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为 / Expected Behavior
+      description: 你预期应该发生什么？/ What did you expect to happen?
+      placeholder: 我预期...
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志输出 / Log Output
+      description: |
+        请粘贴 `~/.yt-dlp-gui/app.log` 的相关部分（隐藏敏感信息）
+        Please paste relevant parts of `~/.yt-dlp-gui/app.log` (hide sensitive info)
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图 / Screenshots
+      description: 如果适用，添加截图帮助解释问题 / If applicable, add screenshots
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 检查清单 / Checklist
+      options:
+        - label: 我已搜索现有 Issues，未发现重复 / I searched existing issues and found no duplicates
+          required: true
+        - label: 我正在使用最新版本 / I am using the latest version
+          required: true

@@ -1,0 +1,222 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # ── 1. Setup ──────────────────────────────────────────
+      # Third-party actions are pinned to commit SHAs: this workflow holds
+      # `contents: write` and handles signing artifacts, so a hijacked moving
+      # tag must not be able to run arbitrary code here.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libappindicator3-dev librsvg2-dev patchelf \
+            libjavascriptcoregtk-4.1-dev libsoup-3.0-dev \
+            libglib2.0-dev
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      # ── 2. Read pinned dependency versions + content hashes ──
+      # Versions AND SHA-256 hashes are pinned in deps.json. Verifying against
+      # in-repo hashes (instead of checksum files served next to the binaries)
+      # means a replaced release asset upstream cannot reach our bundle, even
+      # when the tag still matches.
+      - name: Read deps.json
+        id: deps
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then OS_KEY=windows; else OS_KEY=linux; fi
+          read_dep() { node -e "const d=require('./src-tauri/deps.json');console.log(d[process.argv[1]]??'')" "$1"; }
+          read_sha() { node -e "const d=require('./src-tauri/deps.json');console.log((d[process.argv[1]]||{})[process.argv[2]]??'')" "$1" "$OS_KEY"; }
+          {
+            echo "ytdlp=$(read_dep yt_dlp)"
+            echo "ytdlp_sha=$(read_sha yt_dlp_sha256)"
+            echo "ffmpeg=$(read_dep ffmpeg)"
+            echo "ffmpeg_sha=$(read_sha ffmpeg_sha256)"
+            echo "deno=$(read_dep deno)"
+            echo "deno_sha=$(read_sha deno_sha256)"
+          } >> "$GITHUB_OUTPUT"
+
+      # ── 3. Download external binaries (all SHA-256 verified) ──
+      - name: Create binaries directory
+        run: mkdir -p src-tauri/binaries
+
+      - name: Download yt-dlp (SHA-256 verified)
+        if: steps.deps.outputs.ytdlp != ''
+        run: |
+          VER="${{ steps.deps.outputs.ytdlp }}"
+          EXPECTED="${{ steps.deps.outputs.ytdlp_sha }}"
+          BASE="https://github.com/yt-dlp/yt-dlp/releases/download/$VER"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ASSET="yt-dlp.exe"; OUT="src-tauri/binaries/yt-dlp.exe"
+          else
+            ASSET="yt-dlp_linux"; OUT="src-tauri/binaries/yt-dlp"
+          fi
+          curl -fsSL "$BASE/$ASSET" -o "$OUT"
+          ACTUAL=$(sha256sum "$OUT" | awk '{print $1}')
+          if [ -z "$EXPECTED" ] || [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::yt-dlp SHA-256 mismatch (expected=$EXPECTED actual=$ACTUAL)"; exit 1
+          fi
+          [ "${{ runner.os }}" = "Windows" ] || chmod +x "$OUT"
+
+      - name: Download ffmpeg
+        if: steps.deps.outputs.ffmpeg != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="${{ steps.deps.outputs.ffmpeg }}"
+          # FFmpeg-Builds rotates and deletes its dated autobuild tags, so a
+          # pinned tag+hash goes stale (the release 404s) within weeks. Track the
+          # stable `latest` release and trust the GitHub HTTPS source — the same
+          # origin the other bundled binaries come from. yt-dlp and deno stay
+          # hash-pinned: their tags are immutable version numbers that don't rotate.
+          resolve() {
+            curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/yt-dlp/FFmpeg-Builds/releases/tags/$VER" \
+            | node -e "const r=JSON.parse(require('fs').readFileSync(0,'utf8'));const re=new RegExp(process.argv[1]);const a=(r.assets||[]).find(x=>re.test(x.name));if(!a){console.error('no ffmpeg asset matching '+process.argv[1]);process.exit(1)}console.log(a.browser_download_url)" "$1"
+          }
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            URL=$(resolve 'win64-gpl\.zip$')
+            curl -fsSL "$URL" -o /tmp/ffmpeg.zip
+            unzip -o /tmp/ffmpeg.zip -d /tmp/ffmpeg-extract
+            cp /tmp/ffmpeg-extract/*/bin/ffmpeg.exe src-tauri/binaries/
+            cp /tmp/ffmpeg-extract/*/bin/ffprobe.exe src-tauri/binaries/
+          else
+            URL=$(resolve 'linux64-gpl\.tar\.xz$')
+            curl -fsSL "$URL" -o /tmp/ffmpeg.tar.xz
+            tar -xf /tmp/ffmpeg.tar.xz -C /tmp
+            cp /tmp/ffmpeg-*/bin/ffmpeg src-tauri/binaries/
+            cp /tmp/ffmpeg-*/bin/ffprobe src-tauri/binaries/
+            chmod +x src-tauri/binaries/ffmpeg src-tauri/binaries/ffprobe
+          fi
+
+      - name: Download deno (SHA-256 verified)
+        if: steps.deps.outputs.deno != ''
+        run: |
+          VER="${{ steps.deps.outputs.deno }}"
+          EXPECTED="${{ steps.deps.outputs.deno_sha }}"
+          verify() {
+            ACTUAL=$(sha256sum "$1" | awk '{print $1}')
+            if [ -z "$EXPECTED" ] || [ "$EXPECTED" != "$ACTUAL" ]; then
+              echo "::error::deno SHA-256 mismatch for $1 (expected=$EXPECTED actual=$ACTUAL)"; exit 1
+            fi
+          }
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            curl -fsSL "https://github.com/denoland/deno/releases/download/$VER/deno-x86_64-pc-windows-msvc.zip" -o /tmp/deno.zip
+            verify /tmp/deno.zip
+            unzip -o /tmp/deno.zip -d src-tauri/binaries/
+          else
+            curl -fsSL "https://github.com/denoland/deno/releases/download/$VER/deno-x86_64-unknown-linux-gnu.zip" -o /tmp/deno.zip
+            verify /tmp/deno.zip
+            unzip -o /tmp/deno.zip -d /tmp/deno-extract
+            cp /tmp/deno-extract/deno src-tauri/binaries/
+            chmod +x src-tauri/binaries/deno
+          fi
+
+      # ── 3b. Patch version from the pushed tag ─────────────
+      # tauri.conf.json and Cargo.toml hardcode 0.1.0; on a `v*` tag push,
+      # stamp the real version (tag without leading 'v') so the built
+      # artifacts and updater manifest report the released version.
+      - name: Patch version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Stamping version $VERSION"
+          jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > /tmp/tauri.conf.json
+          mv /tmp/tauri.conf.json src-tauri/tauri.conf.json
+          # Only the first `version = "..."` (the [package] one) is touched.
+          sed -i "0,/^version = \".*\"/s//version = \"$VERSION\"/" src-tauri/Cargo.toml
+
+      # ── 4. Tauri build ────────────────────────────────────
+      - name: Tauri build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: npm run tauri build
+
+      # ── 5. Upload artifacts to GitHub Release ─────────────
+      # The `*.exe.sig` line matters: `*.exe` alone does not match the NSIS
+      # updater signature, and the updater-manifest job below needs it.
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: |
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/appimage/*.AppImage*
+            src-tauri/target/release/bundle/msi/*.msi*
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/nsis/*.exe.sig
+          generate_release_notes: true
+
+  # ── 6. Updater manifest ─────────────────────────────────
+  # `tauri build` does NOT generate latest.json (that's a tauri-action
+  # feature), and the two matrix legs each only know their own platform.
+  # This job runs after both legs uploaded their artifacts, merges the
+  # per-platform signatures into one manifest and attaches it to the release —
+  # the endpoint configured in tauri.conf.json plugins.updater.
+  updater-manifest:
+    name: Publish updater manifest
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate and upload latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p sigs
+          gh release download "$TAG" --repo "$REPO" --pattern '*.sig' --dir sigs
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const { REPO, TAG } = process.env;
+            const sigs = fs.readdirSync("sigs");
+            const entry = suffix => {
+              const sig = sigs.find(n => n.endsWith(suffix + ".sig"));
+              if (!sig) throw new Error(`no ${suffix}.sig asset on release ${TAG}`);
+              const asset = sig.slice(0, -".sig".length);
+              return {
+                signature: fs.readFileSync(path.join("sigs", sig), "utf8").trim(),
+                url: `https://github.com/${REPO}/releases/download/${TAG}/${encodeURIComponent(asset)}`,
+              };
+            };
+            const manifest = {
+              version: TAG.replace(/^v/, ""),
+              pub_date: new Date().toISOString(),
+              platforms: {
+                "linux-x86_64": entry(".AppImage"),
+                "windows-x86_64": entry(".exe"),
+              },
+            };
+            fs.writeFileSync("latest.json", JSON.stringify(manifest, null, 2));
+          '
+          cat latest.json
+          gh release upload "$TAG" latest.json --repo "$REPO" --clobber
